@@ -20,6 +20,8 @@ public class Boid : MonoBehaviour
     Vector3 pos;
     Vector3 velocity;
     Vector3 seperationForce;
+    Vector3 alignmentForce;
+    Vector3 cohesionForce;
     Vector3 linearAcceleration;
     
 
@@ -58,14 +60,33 @@ public class Boid : MonoBehaviour
         WrapScreen();
         CheckNeighbours();
 
-        seperationForce = AddSeperationForce();
+        seperationForce = GetSeperationForce();
         if (seperationForce.magnitude > 6.0f)
         {
             seperationForce.Normalize();
             seperationForce *= 6.0f;
         }
 
+        alignmentForce = GetAlignmentForce();
+        if (alignmentForce.magnitude > 6.0f)
+        {
+            alignmentForce.Normalize();
+            seperationForce *= 6.0f;
+        }
+
+        cohesionForce = GetCohesionForce();
+        if (cohesionForce.magnitude > 6.0f)
+        {
+            cohesionForce.Normalize();
+            cohesionForce *= 6.0f;
+        }
+
+
         velocity += seperationForce * Time.deltaTime;
+        velocity += alignmentForce * Time.deltaTime;
+        velocity += cohesionForce * Time.deltaTime;
+
+
         linearAcceleration = velocity;
         linearAcceleration.Normalize();
         velocity += linearAcceleration / 2;
@@ -137,14 +158,11 @@ public class Boid : MonoBehaviour
         return randomNumber;
     }
 
-    Vector3 AddSeperationForce()
+    Vector3 GetSeperationForce()
     {
         Vector3 desiredVelocity = Vector3.zero;
         Vector3 componentVelocity;
         Vector3 steering = Vector3.zero;
-        
-
-
 
         if (neighbours.Count > 0)
         {
@@ -162,6 +180,52 @@ public class Boid : MonoBehaviour
         return steering;
       
     }
-   
+
+    Vector3 GetAlignmentForce()
+    {
+        Vector3 desiredVelocity = Vector3.zero;
+        Vector3 componentVelocity;
+        Vector3 steering = Vector3.zero;
+
+        if (neighbours.Count > 0)
+        {
+            foreach (Boid neighbour in neighbours)
+            {
+                componentVelocity = neighbour.velocity;
+                componentVelocity.Normalize();
+                desiredVelocity += componentVelocity;
+            }
+            desiredVelocity.Normalize();
+            desiredVelocity *= 6;
+            steering = desiredVelocity - velocity;
+        }
+        return steering;
+
+    }
+
+    Vector3 GetCohesionForce()
+    {
+        Vector3 desiredVelocity = Vector3.zero;
+        Vector3 componentVelocity;
+        Vector3 steering = Vector3.zero;
+        Vector3 averagePosition = Vector3.zero;
+
+        if (neighbours.Count > 0)
+        {
+            foreach (Boid neighbour in neighbours)
+            {
+                neighbour.transform.position.Normalize();
+                averagePosition += neighbour.transform.position;
+            }
+            averagePosition.Normalize();
+
+            desiredVelocity =  averagePosition-transform.position;
+            desiredVelocity.Normalize();
+            desiredVelocity *= 6;
+            steering = desiredVelocity - velocity;
+        }
+        return steering;
+
+    }
 }
 
